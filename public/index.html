@@ -1,0 +1,83 @@
+
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>OTP + 2FA Tool</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;background:#111827;color:#111827}.screen{min-height:100dvh;padding:22px 16px;background:linear-gradient(160deg,#ff7900,#111827 62%)}.hidden{display:none!important}.wrap{max-width:430px;margin:auto}.head{display:flex;justify-content:space-between;align-items:flex-start;color:white;margin-bottom:18px;gap:12px}.head h1{margin:0;font-size:32px}.head p{margin:6px 0 0;opacity:.85;font-weight:700}.card{background:white;border-radius:28px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.28);margin-bottom:14px}h2{margin:0 0 8px}.desc{color:#6b7280;font-weight:700;margin:0 0 14px}label{display:block;margin:14px 0 7px;color:#6b7280;font-size:13px;font-weight:900;text-transform:uppercase}input{width:100%;padding:16px;border-radius:17px;border:1px solid #d1d5db;font-size:17px}button{width:100%;border:0;border-radius:18px;padding:16px;margin-top:12px;background:#ff7900;color:white;font-size:17px;font-weight:950}.dark{background:#111827}.red{background:#dc2626}.green{background:#16a34a}.gray{background:#6b7280}.smallbtn{width:auto;padding:11px 14px;margin:0;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3)}.box{background:#f3f4f6;border-radius:22px;padding:16px;margin-top:14px}.title{color:#6b7280;font-size:13px;font-weight:900;text-transform:uppercase;margin-bottom:7px}.phone{font-size:32px;font-weight:950;word-break:break-all}.otp{font-size:52px;font-weight:950;color:#16a34a;letter-spacing:4px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{padding:13px;margin-top:13px;border-radius:16px;background:#fff7ed;color:#c2410c;text-align:center;font-weight:900}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.small{font-size:13px;color:#6b7280;font-weight:700;margin-top:8px}.price{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:13px;background:#f9fafb;border-bottom:1px solid #e5e7eb}.price.active{outline:3px solid #ff7900;background:#fff7ed}.prices{max-height:340px;overflow:auto;border-radius:18px;margin-top:12px}.badge{background:#111827;color:white;border-radius:99px;padding:7px 9px;font-weight:950;font-size:12px}.searchbox{margin-top:12px}.section-title{color:#111827;font-size:22px;font-weight:950;margin:8px 0}.progress{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:10px}.bar{height:100%;background:#16a34a}.balanceHead{text-align:right;color:white;font-weight:950;min-width:128px}.balanceHead .money{font-size:20px}.balanceHead .smallbtn{margin-top:6px}
+</style>
+</head>
+<body>
+
+<div id="login" class="screen"><div class="wrap"><div class="head"><div><h1>OTP Tool</h1><p id="domainTitle">SMS OTP + 2FA</p></div><button class="smallbtn" onclick="showAdminLogin()">Quản lý</button></div><div class="card"><h2>Đăng nhập</h2><p class="desc">Nhập mật khẩu truy cập</p><label>Mật khẩu truy cập</label><input id="accessPass" type="password" placeholder="Nhập mật khẩu"><button onclick="loginAccess()">Vào tool</button><div id="loginMsg" class="status hidden"></div></div></div></div>
+
+<div id="app" class="screen hidden"><div class="wrap"><div class="head"><div><h1>OTP Tool</h1><p id="appDomainTitle">Trang chủ: lấy số + 2FA</p></div><div class="balanceHead"><div>Số dư</div><div id="balance" class="money">$0.00</div><button class="smallbtn" onclick="deposit()">Nạp tiền</button></div></div><div class="card"><div class="section-title">SMS OTP</div><div class="box"><div class="title">Admin đã chọn</div><div id="selected" class="phone" style="font-size:24px">---</div><div id="price" class="small">Giá: ---</div></div><button onclick="rent()">Lấy số điện thoại</button><div class="box"><div class="title">Số điện thoại</div><div id="phone" class="phone">---</div><div class="row"><button class="dark" onclick="copyPhone()">Copy số</button><button class="red" onclick="cancelNum()">Hủy số</button></div><div class="small">Copy chỉ lấy số sau mã quốc gia</div></div><div class="box"><div class="title">OTP SMS</div><div id="otp" class="otp">----</div><button class="green" onclick="copyOtp()">Copy OTP</button></div><div id="status" class="status">Sẵn sàng</div></div><div class="card"><div class="section-title">2FA Code</div><p class="desc">Dán key 2FA, mã sẽ hiện bên dưới. Không lưu key.</p><label>Secret key 2FA</label><input id="twofaSecret" placeholder="Dán key 2FA" oninput="update2FA()"><div class="box"><div class="title">Mã 2FA</div><div id="twofaCode" class="otp">------</div><div class="small" id="twofaTime">Còn --s</div><div class="progress"><div id="twofaBar" class="bar" style="width:0%"></div></div><button class="green" onclick="copy2FA()">Copy 2FA</button></div><div id="twofaStatus" class="status">Sẵn sàng</div></div><button class="gray" onclick="logout()">Đăng xuất</button></div></div>
+
+<div id="adminLogin" class="screen hidden"><div class="wrap"><div class="card"><h2>Quản lý</h2><p class="desc">Mật khẩu admin mặc định ban đầu: 123456</p><label>Mật khẩu admin</label><input id="adminPass" type="password" placeholder="Nhập mật khẩu admin"><button onclick="loginAdmin()">Mở quản lý</button><button class="dark" onclick="back()">Quay lại</button><div id="adminLoginMsg" class="status hidden"></div></div></div></div>
+
+<div id="admin" class="screen hidden"><div class="wrap"><div class="head"><div><h1>Quản lý</h1><p id="adminDomainTitle">API key, mật khẩu, quốc gia</p></div></div><div class="card"><label>API key GrizzlySMS</label><input id="apiKey" type="password" placeholder="Dán API key"><div id="keyMask" class="small">API key: chưa có</div><button class="dark" onclick="loadPrices()">Tải quốc gia TikTok có số + giá</button><input id="countrySearch" class="searchbox" placeholder="Tìm quốc gia, mã vùng, giá..." oninput="renderPrices()"><div id="adminSelected" class="status">Chưa chọn quốc gia</div><div id="prices" class="prices"></div><label>Mật khẩu admin mới</label><input id="newAdmin" type="password" placeholder="Để trống nếu không đổi"><label>Mật khẩu truy cập mới</label><input id="newAccess" type="password" placeholder="Để trống nếu không đổi"><button onclick="saveSettings()">Lưu cài đặt</button><div class="row"><button class="dark" onclick="back()">Quay lại</button><button class="red" onclick="logoutAdmin()">Thoát admin</button></div><div id="adminMsg" class="status hidden"></div></div></div></div>
+
+<script>
+const DOMAIN=window.location.hostname.replace(/^www\./i,"").toLowerCase();
+const KEY=n=>`${n}_${DOMAIN}`;
+document.getElementById("domainTitle").textContent=DOMAIN+" • SMS OTP + 2FA";
+document.getElementById("appDomainTitle").textContent=DOMAIN+" • lấy số + 2FA";
+document.getElementById("adminDomainTitle").textContent=DOMAIN+" • cấu hình riêng";
+
+let access=localStorage.getItem(KEY("access"))||"";
+let adminPass=sessionStorage.getItem(KEY("admin"))||"";
+let selected=null,pick=null,prices=[];
+let id=localStorage.getItem(KEY("id"))||"";
+let phone=localStorage.getItem(KEY("phone"))||"";
+let dial=localStorage.getItem(KEY("dial"))||"+62";
+let timer=null,current2FA="";
+
+function show(x){["login","app","adminLogin","admin"].forEach(i=>document.getElementById(i).classList.add("hidden"));document.getElementById(x).classList.remove("hidden")}
+function msg(id,t,c=""){let e=document.getElementById(id);e.className="status "+c;e.textContent=t;e.classList.remove("hidden")}
+function accessApi(p,o={}){return fetch(p,{...o,headers:{"Content-Type":"application/json","x-access-password":access,...(o.headers||{})}})}
+function adminApi(p,o={}){return fetch(p,{...o,headers:{"Content-Type":"application/json","x-admin-password":adminPass,...(o.headers||{})}})}
+function digits(s){return String(s||"").replace(/\D/g,"")}
+function updateUI(){if(!selected)return;document.getElementById("selected").textContent=`${selected.name} (${selected.dial})`;document.getElementById("price").textContent=`Giá: $${Number(selected.cost||0).toFixed(3)} / số`}
+
+async function loadConfig(){try{let r=await accessApi("/api/app/config"),d=await r.json();if(d.ok){selected=d.selected;dial=selected.dial;updateUI()}}catch{}}
+async function loadBalance(){try{let r=await fetch("/api/balance"),d=await r.json();if(d.ok){let n=Number(String(d.balance).replace(",","."));document.getElementById("balance").textContent=isNaN(n)?d.balance:"$"+n.toFixed(2)}else{document.getElementById("balance").textContent="Lỗi"}}catch{document.getElementById("balance").textContent="Lỗi"}}
+function deposit(){window.open("https://grizzlysms.com/profile/pay","_blank")}
+
+async function loginAccess(){access=document.getElementById("accessPass").value.trim();if(!access)return msg("loginMsg","Chưa nhập mật khẩu","err");try{let r=await accessApi("/api/auth/check-access",{method:"POST"}),d=await r.json();if(!d.ok)return msg("loginMsg","Sai mật khẩu","err");localStorage.setItem(KEY("access"),access);openApp()}catch{msg("loginMsg","Lỗi server","err")}}
+async function openApp(){show("app");await loadConfig();await loadBalance();if(phone)showPhone();if(id){setStatus("Đang tiếp tục chờ OTP...");checkOtp()}update2FA()}
+function logout(){localStorage.removeItem(KEY("access"));access="";show("login")}
+function showAdminLogin(){show("adminLogin")}
+
+async function loginAdmin(){adminPass=document.getElementById("adminPass").value.trim();if(!adminPass)return msg("adminLoginMsg","Chưa nhập mật khẩu admin","err");try{let r=await adminApi("/api/admin/login",{method:"POST"}),d=await r.json();if(!d.ok)return msg("adminLoginMsg","Sai mật khẩu admin","err");sessionStorage.setItem(KEY("admin"),adminPass);document.getElementById("keyMask").textContent="API key: "+d.settings.keyMasked;pick={country:d.settings.country,name:d.settings.name,dial:d.settings.dial,cost:d.settings.cost};renderPick();show("admin")}catch{msg("adminLoginMsg","Lỗi server","err")}}
+function renderPick(){document.getElementById("adminSelected").textContent=pick?`Đang chọn: ${pick.name} (${pick.dial}) - $${Number(pick.cost||0).toFixed(3)}`:"Chưa chọn quốc gia"}
+
+async function loadPrices(){msg("adminMsg","Đang tải...");try{let r=await adminApi("/api/admin/prices"),d=await r.json();if(!d.ok)return msg("adminMsg",d.error||"Lỗi tải giá","err");prices=d.prices;renderPrices();msg("adminMsg",`Đã tải ${prices.length} quốc gia`,"ok")}catch{msg("adminMsg","Lỗi server","err")}}
+function renderPrices(){let box=document.getElementById("prices"),q=(document.getElementById("countrySearch")?.value||"").toLowerCase();let arr=prices.filter(p=>(p.name+" "+p.dial+" "+p.country+" "+p.cost).toLowerCase().includes(q));box.innerHTML=arr.map(p=>`<div class="price ${pick&&pick.country===p.country?'active':''}" onclick='choose(${JSON.stringify(p)})'><div style="font-size:26px">${p.flag}</div><div><b>${p.name} ${p.dial}</b><div class="small">Còn ${p.count.toLocaleString()} số • country=${p.country}</div></div><div class="badge">$${Number(p.cost).toFixed(3)}</div></div>`).join("")||'<div class="status err">Không tìm thấy</div>'}
+function choose(p){pick=p;renderPick();renderPrices()}
+
+async function saveSettings(){let body={apiKey:document.getElementById("apiKey").value.trim(),adminPassword:document.getElementById("newAdmin").value.trim(),accessPassword:document.getElementById("newAccess").value.trim()};if(pick)Object.assign(body,{country:pick.country,name:pick.name,dial:pick.dial,cost:pick.cost});try{let r=await adminApi("/api/admin/save",{method:"POST",body:JSON.stringify(body)}),d=await r.json();if(!d.ok)return msg("adminMsg",d.error||"Lỗi lưu","err");if(body.adminPassword){adminPass=body.adminPassword;sessionStorage.setItem(KEY("admin"),adminPass)}if(body.accessPassword)localStorage.removeItem(KEY("access"));document.getElementById("keyMask").textContent="API key: "+d.settings.keyMasked;msg("adminMsg","Đã lưu cài đặt cho "+DOMAIN,"ok");loadBalance()}catch{msg("adminMsg","Lỗi server","err")}}
+
+function back(){show(access?"app":"login")}
+function logoutAdmin(){sessionStorage.removeItem(KEY("admin"));adminPass="";back()}
+function setStatus(t,c=""){let e=document.getElementById("status");e.className="status "+c;e.textContent=t}
+function showPhone(){document.getElementById("phone").textContent=dial+phone}
+function saveState(){localStorage.setItem(KEY("id"),id);localStorage.setItem(KEY("phone"),phone);localStorage.setItem(KEY("dial"),dial)}
+function clearState(){["id","phone","dial"].forEach(k=>localStorage.removeItem(KEY(k)))}
+
+async function rent(){clearTimeout(timer);document.getElementById("phone").textContent="Đang lấy số...";document.getElementById("otp").textContent="----";setStatus("Đang thuê số...");try{let r=await accessApi("/api/rent",{method:"POST",body:"{}"}),d=await r.json();if(!d.ok){document.getElementById("phone").textContent="---";return setStatus(d.error||"Lỗi lấy số","err")}if(d.selected){selected=d.selected;dial=selected.dial;updateUI()}id=d.id;phone=String(d.phone).replace(/^\+/,"").replace(new RegExp("^"+digits(dial)),"");saveState();showPhone();await loadBalance();setStatus("Đã có số, đang chờ OTP...");checkOtp()}catch{setStatus("Lỗi server","err")}}
+async function checkOtp(){if(!id)return;try{let r=await accessApi("/api/status?id="+encodeURIComponent(id)),d=await r.json();if(d.code){document.getElementById("otp").textContent=d.code;await loadBalance();return setStatus("Đã nhận OTP","ok")}setStatus("Đang chờ OTP...");timer=setTimeout(checkOtp,4000)}catch{setStatus("Lỗi check OTP...");timer=setTimeout(checkOtp,4000)}}
+async function cancelNum(){if(!id)return setStatus("Không có số để hủy","err");clearTimeout(timer);try{await accessApi("/api/cancel",{method:"POST",body:JSON.stringify({id})});id="";phone="";clearState();document.getElementById("phone").textContent="---";document.getElementById("otp").textContent="----";await loadBalance();setStatus("Đã hủy số","ok")}catch{setStatus("Lỗi hủy số","err")}}
+function copyPhone(){if(!phone)return setStatus("Chưa có số","err");navigator.clipboard.writeText(phone);setStatus("Đã copy số không gồm mã quốc gia","ok")}
+function copyOtp(){let o=document.getElementById("otp").textContent.trim();if(!o||o==="----")return setStatus("Chưa có OTP","err");navigator.clipboard.writeText(o);setStatus("Đã copy OTP","ok")}
+
+function base32ToBytes(base32){const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";let bits="",bytes=[];base32=base32.replace(/\s+/g,"").replace(/=+$/,"").toUpperCase();for(const c of base32){const v=alphabet.indexOf(c);if(v<0)throw new Error("BAD_SECRET");bits+=v.toString(2).padStart(5,"0")}for(let i=0;i+8<=bits.length;i+=8)bytes.push(parseInt(bits.slice(i,i+8),2));return new Uint8Array(bytes)}
+async function totp(secret){const key=await crypto.subtle.importKey("raw",base32ToBytes(secret),{name:"HMAC",hash:"SHA-1"},false,["sign"]);const counter=Math.floor(Date.now()/30000);const buf=new ArrayBuffer(8);const view=new DataView(buf);view.setUint32(4,counter);const h=new Uint8Array(await crypto.subtle.sign("HMAC",key,buf));const o=h[h.length-1]&15;const bin=((h[o]&127)<<24)|(h[o+1]<<16)|(h[o+2]<<8)|h[o+3];return String(bin%1000000).padStart(6,"0")}
+async function update2FA(){const input=document.getElementById("twofaSecret");if(!input)return;const secret=input.value.trim().replace(/\s+/g,"").toUpperCase();const remain=30-(Math.floor(Date.now()/1000)%30);document.getElementById("twofaTime").textContent="Còn "+remain+"s";document.getElementById("twofaBar").style.width=(remain/30*100)+"%";if(!secret){current2FA="";document.getElementById("twofaCode").textContent="------";return}try{current2FA=await totp(secret);document.getElementById("twofaCode").textContent=current2FA;document.getElementById("twofaStatus").textContent="Sẵn sàng"}catch{current2FA="";document.getElementById("twofaCode").textContent="Lỗi";document.getElementById("twofaStatus").textContent="Key 2FA không hợp lệ"}}
+function copy2FA(){if(!current2FA){document.getElementById("twofaStatus").textContent="Chưa có mã 2FA";return}navigator.clipboard.writeText(current2FA);document.getElementById("twofaStatus").textContent="Đã copy: "+current2FA}
+setInterval(update2FA,1000);
+if(access)openApp();else show("login");
+</script>
+</body>
+</html>
