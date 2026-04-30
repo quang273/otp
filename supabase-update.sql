@@ -1,4 +1,3 @@
-
 alter table domain_configs add column if not exists quick_text text default '';
 
 create table if not exists saved_2fa_accounts (

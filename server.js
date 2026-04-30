@@ -41,6 +41,12 @@ function domainFromReq(req) {
   return String(Array.isArray(h) ? h[0] : h).split(":")[0].replace(/^www\./i, "").toLowerCase().trim();
 }
 
+function listDomain(req) {
+  // Centralize all iPhones/browsers under the same root domain.
+  // www.quang88.fun and quang88.fun use the same saved list.
+  return domainFromReq(req).replace(/^www\./i, "").toLowerCase();
+}
+
 function needSupabase() {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("MISSING_SUPABASE_ENV");
 }
@@ -261,7 +267,7 @@ app.post("/api/cancel", access, async (req,res) => {
 
 app.get("/api/saved-2fa", access, async (req,res) => {
   try {
-    const rows = await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(req.domainKey)}&select=id,combo,created_at&order=created_at.desc`);
+    const rows = await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(listDomain(req))}&select=id,combo,created_at&order=created_at.asc`);
     res.json({ ok:true, rows });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
@@ -272,7 +278,7 @@ app.post("/api/saved-2fa", access, async (req,res) => {
   try {
     const combo = String(req.body.combo || "").trim();
     if (!combo || !combo.includes("|")) return res.status(400).json({ ok:false, error:"BAD_COMBO" });
-    await sb("saved_2fa_accounts", { method:"POST", body:JSON.stringify({ domain:req.domainKey, combo }), prefer:"return=minimal" });
+    await sb("saved_2fa_accounts", { method:"POST", body:JSON.stringify({ domain:listDomain(req), combo }), prefer:"return=minimal" });
     res.json({ ok:true });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
@@ -281,7 +287,7 @@ app.post("/api/saved-2fa", access, async (req,res) => {
 
 app.delete("/api/saved-2fa", access, async (req,res) => {
   try {
-    await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(req.domainKey)}`, { method:"DELETE", prefer:"return=minimal" });
+    await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(listDomain(req))}`, { method:"DELETE", prefer:"return=minimal" });
     res.json({ ok:true });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
