@@ -544,9 +544,14 @@ function copyOtp() {
   setStatus("Đã copy OTP", "ok");
 }
 
-function copyQuickText() {
-  if (!quickText) return alert("Chưa có nội dung copy nhanh");
-  navigator.clipboard.writeText(quickText);
+async function copyQuickText() {
+  if (!quickText) return setStatus("Chưa có nội dung copy nhanh", "err");
+  try {
+    await navigator.clipboard.writeText(quickText);
+    setStatus("Đã copy nội dung nhanh", "ok");
+  } catch (e) {
+    setStatus("Không copy được nội dung", "err");
+  }
 }
 
 function combo() {
