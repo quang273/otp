@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const fetch = require("node-fetch");
@@ -26,33 +25,32 @@ const DEFAULT_CONFIG = {
 };
 
 const COUNTRY = {
-  "0":["Russia","+7","🇷🇺"],"1":["Ukraine","+380","🇺🇦"],"2":["Kazakhstan","+7","🇰🇿"],"3":["China","+86","🇨🇳"],"4":["Philippines","+63","🇵🇭"],
-  "5":["Myanmar","+95","🇲🇲"],"6":["Indonesia","+62","🇮🇩"],"7":["Malaysia","+60","🇲🇾"],"8":["Kenya","+254","🇰🇪"],"9":["Tanzania","+255","🇹🇿"],
-  "10":["Vietnam","+84","🇻🇳"],"11":["Kyrgyzstan","+996","🇰🇬"],"12":["United States virtual","+1","🇺🇸"],"13":["Israel","+972","🇮🇱"],
-  "14":["Hong Kong","+852","🇭🇰"],"15":["Poland","+48","🇵🇱"],"16":["United Kingdom","+44","🇬🇧"],"22":["India","+91","🇮🇳"],
-  "30":["Brazil","+55","🇧🇷"],"32":["Romania","+40","🇷🇴"],"33":["Colombia","+57","🇨🇴"],"36":["Canada","+1","🇨🇦"],
-  "43":["Germany","+49","🇩🇪"],"46":["Sweden","+46","🇸🇪"],"48":["Netherlands","+31","🇳🇱"],"52":["Thailand","+66","🇹🇭"],
-  "56":["Spain","+34","🇪🇸"],"73":["France","+33","🇫🇷"],"78":["Italy","+39","🇮🇹"],"86":["Mexico","+52","🇲🇽"],
-  "117":["Portugal","+351","🇵🇹"],"182":["Japan","+81","🇯🇵"],"187":["United States","+1","🇺🇸"]
+  "0":["Russia","+7","🇷🇺"],"1":["Ukraine","+380","🇺🇦"],"2":["Kazakhstan","+7","🇰🇿"],"3":["China","+86","🇨🇳"],
+  "4":["Philippines","+63","🇵🇭"],"5":["Myanmar","+95","🇲🇲"],"6":["Indonesia","+62","🇮🇩"],"7":["Malaysia","+60","🇲🇾"],
+  "8":["Kenya","+254","🇰🇪"],"9":["Tanzania","+255","🇹🇿"],"10":["Vietnam","+84","🇻🇳"],"11":["Kyrgyzstan","+996","🇰🇬"],
+  "12":["United States virtual","+1","🇺🇸"],"13":["Israel","+972","🇮🇱"],"14":["Hong Kong","+852","🇭🇰"],"15":["Poland","+48","🇵🇱"],
+  "16":["United Kingdom","+44","🇬🇧"],"22":["India","+91","🇮🇳"],"30":["Brazil","+55","🇧🇷"],"32":["Romania","+40","🇷🇴"],
+  "33":["Colombia","+57","🇨🇴"],"36":["Canada","+1","🇨🇦"],"43":["Germany","+49","🇩🇪"],"46":["Sweden","+46","🇸🇪"],
+  "48":["Netherlands","+31","🇳🇱"],"52":["Thailand","+66","🇹🇭"],"56":["Spain","+34","🇪🇸"],"73":["France","+33","🇫🇷"],
+  "78":["Italy","+39","🇮🇹"],"86":["Mexico","+52","🇲🇽"],"117":["Portugal","+351","🇵🇹"],"182":["Japan","+81","🇯🇵"],
+  "187":["United States","+1","🇺🇸"]
 };
 
 function domainFromReq(req) {
   const h = req.headers["x-forwarded-host"] || req.headers.host || "default";
-  return String(Array.isArray(h) ? h[0] : h).split(":")[0].replace(/^www\./i, "").toLowerCase().trim();
+  return String(Array.isArray(h) ? h[0] : h).split(":")[0].replace(/^www\./i, "").toLowerCase().trim() || "default";
 }
 
 function listDomain(req) {
-  // Centralize all iPhones/browsers under the same root domain.
-  // www.quang88.fun and quang88.fun use the same saved list.
   return domainFromReq(req).replace(/^www\./i, "").toLowerCase();
 }
 
-function needSupabase() {
+function requireSupabase() {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("MISSING_SUPABASE_ENV");
 }
 
 async function sb(pathname, options = {}) {
-  needSupabase();
+  requireSupabase();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathname}`, {
     ...options,
     headers: {
@@ -79,20 +77,20 @@ async function getConfig(domain) {
   return row;
 }
 
-async function saveConfig(domain, config) {
+async function saveConfig(domain, c) {
   await sb("domain_configs", {
     method:"POST",
     body:JSON.stringify({
       domain,
-      admin_password: config.admin_password,
-      access_password: config.access_password,
-      grizzly_api_key: config.grizzly_api_key,
-      service: config.service,
-      country: config.country,
-      country_name: config.country_name,
-      dial: config.dial,
-      cost: Number(config.cost || 0),
-      quick_text: config.quick_text || "",
+      admin_password: c.admin_password,
+      access_password: c.access_password,
+      grizzly_api_key: c.grizzly_api_key,
+      service: c.service,
+      country: c.country,
+      country_name: c.country_name,
+      dial: c.dial,
+      cost: Number(c.cost || 0),
+      quick_text: c.quick_text || "",
       updated_at: new Date().toISOString()
     }),
     prefer:"resolution=merge-duplicates,return=minimal"
@@ -114,7 +112,7 @@ async function access(req, res, next) {
     req.domainKey = domain;
     req.config = config;
     next();
-  } catch (e) {
+  } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
   }
 }
@@ -129,7 +127,7 @@ async function admin(req, res, next) {
     req.domainKey = domain;
     req.config = config;
     next();
-  } catch (e) {
+  } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
   }
 }
@@ -174,7 +172,19 @@ app.get("/api/balance", async (req,res) => {
 
 app.post("/api/admin/login", admin, (req,res) => {
   const c = req.config;
-  res.json({ ok:true, domain:req.domainKey, settings:{ keyMasked:mask(c.grizzly_api_key), service:c.service, country:c.country, name:c.country_name, dial:c.dial, cost:c.cost, quickText:c.quick_text || "" } });
+  res.json({
+    ok:true,
+    domain:req.domainKey,
+    settings:{
+      keyMasked:mask(c.grizzly_api_key),
+      service:c.service,
+      country:c.country,
+      name:c.country_name,
+      dial:c.dial,
+      cost:c.cost,
+      quickText:c.quick_text || ""
+    }
+  });
 });
 
 app.get("/api/admin/prices", admin, async (req,res) => {
@@ -182,15 +192,17 @@ app.get("/api/admin/prices", admin, async (req,res) => {
     const raw = await grizzly(req.config, { action:"getPrices", service:"lf" });
     const data = JSON.parse(raw);
     const rows = [];
+
     for (const [country, services] of Object.entries(data || {})) {
       if (!services || !services.lf) continue;
       const item = services.lf;
       const count = Number(item.count || 0);
       const cost = Number(item.cost || 0);
       if (count <= 0) continue;
-      const info = COUNTRY[country] || ["Country "+country, "+", "🌍"];
+      const info = COUNTRY[country] || ["Country " + country, "+", "🌍"];
       rows.push({ country, service:"lf", name:info[0], dial:info[1], flag:info[2], count, cost });
     }
+
     rows.sort((a,b) => a.cost === b.cost ? b.count - a.count : a.cost - b.cost);
     res.json({ ok:true, prices:rows });
   } catch(e) {
@@ -201,6 +213,7 @@ app.get("/api/admin/prices", admin, async (req,res) => {
 app.post("/api/admin/save", admin, async (req,res) => {
   try {
     const c = { ...req.config };
+
     const adminPassword = String(req.body.adminPassword || "").trim();
     const accessPassword = String(req.body.accessPassword || "").trim();
     const apiKey = String(req.body.apiKey || "").trim();
@@ -211,6 +224,7 @@ app.post("/api/admin/save", admin, async (req,res) => {
     if (adminPassword) c.admin_password = adminPassword;
     if (accessPassword) c.access_password = accessPassword;
     if (apiKey) c.grizzly_api_key = apiKey;
+
     c.quick_text = String(req.body.quickText ?? c.quick_text ?? "").trim();
 
     if (req.body.country) {
@@ -222,7 +236,19 @@ app.post("/api/admin/save", admin, async (req,res) => {
     }
 
     await saveConfig(req.domainKey, c);
-    res.json({ ok:true, settings:{ keyMasked:mask(c.grizzly_api_key), service:c.service, country:c.country, name:c.country_name, dial:c.dial, cost:c.cost, quickText:c.quick_text || "" } });
+
+    res.json({
+      ok:true,
+      settings:{
+        keyMasked:mask(c.grizzly_api_key),
+        service:c.service,
+        country:c.country,
+        name:c.country_name,
+        dial:c.dial,
+        cost:c.cost,
+        quickText:c.quick_text || ""
+      }
+    });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
   }
@@ -232,10 +258,12 @@ app.post("/api/rent", access, async (req,res) => {
   try {
     const c = req.config;
     const raw = await grizzly(c, { action:"getNumber", service:c.service, country:c.country });
+
     if (raw.startsWith("ACCESS_NUMBER:")) {
       const [, id, phone] = raw.split(":");
       return res.json({ ok:true, id, phone, selected:{ name:c.country_name, dial:c.dial, cost:c.cost } });
     }
+
     res.json({ ok:false, error:raw });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
@@ -246,7 +274,9 @@ app.get("/api/status", access, async (req,res) => {
   try {
     const id = String(req.query.id || "");
     if (!id) return res.status(400).json({ ok:false, error:"MISSING_ID" });
+
     const raw = await grizzly(req.config, { action:"getStatus", id });
+
     if (raw.startsWith("STATUS_OK:")) return res.json({ ok:true, code:raw.split(":").slice(1).join(":") });
     res.json({ ok:true, status:"waiting", raw });
   } catch(e) {
@@ -258,6 +288,7 @@ app.post("/api/cancel", access, async (req,res) => {
   try {
     const id = String(req.body.id || "");
     if (!id) return res.status(400).json({ ok:false, error:"MISSING_ID" });
+
     const raw = await grizzly(req.config, { action:"setStatus", status:"8", id });
     res.json({ ok:true, raw });
   } catch(e) {
@@ -267,7 +298,8 @@ app.post("/api/cancel", access, async (req,res) => {
 
 app.get("/api/saved-2fa", access, async (req,res) => {
   try {
-    const rows = await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(listDomain(req))}&select=id,combo,created_at&order=created_at.asc`);
+    const key = listDomain(req);
+    const rows = await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(key)}&select=id,combo,created_at&order=created_at.asc`);
     res.json({ ok:true, rows });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
@@ -278,7 +310,13 @@ app.post("/api/saved-2fa", access, async (req,res) => {
   try {
     const combo = String(req.body.combo || "").trim();
     if (!combo || !combo.includes("|")) return res.status(400).json({ ok:false, error:"BAD_COMBO" });
-    await sb("saved_2fa_accounts", { method:"POST", body:JSON.stringify({ domain:listDomain(req), combo }), prefer:"return=minimal" });
+
+    await sb("saved_2fa_accounts", {
+      method:"POST",
+      body:JSON.stringify({ domain:listDomain(req), combo }),
+      prefer:"return=minimal"
+    });
+
     res.json({ ok:true });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });
@@ -287,7 +325,10 @@ app.post("/api/saved-2fa", access, async (req,res) => {
 
 app.delete("/api/saved-2fa", access, async (req,res) => {
   try {
-    await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(listDomain(req))}`, { method:"DELETE", prefer:"return=minimal" });
+    await sb(`saved_2fa_accounts?domain=eq.${encodeURIComponent(listDomain(req))}`, {
+      method:"DELETE",
+      prefer:"return=minimal"
+    });
     res.json({ ok:true });
   } catch(e) {
     res.status(500).json({ ok:false, error:e.message });

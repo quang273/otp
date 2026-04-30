@@ -1,6 +1,6 @@
 {
   "name": "otp-tool-fixed",
-  "version": "9.0.0",
+  "version": "10.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
