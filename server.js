@@ -21,7 +21,8 @@ const DEFAULT_CONFIG = {
   country_name: "Indonesia",
   dial: "+62",
   cost: 0.01,
-  quick_text: ""
+  quick_text: "",
+  withdraw_email: ""
 };
 
 const COUNTRY = {
@@ -91,10 +92,52 @@ async function saveConfig(domain, c) {
       dial: c.dial,
       cost: Number(c.cost || 0),
       quick_text: c.quick_text || "",
+      withdraw_email: c.withdraw_email || "",
       updated_at: new Date().toISOString()
     }),
     prefer:"resolution=merge-duplicates,return=minimal"
   });
+}
+
+
+function randomAlphaNum(len = 7) {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "";
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function randomDotLocal(local) {
+  local = String(local || "").replace(/\./g, "").toLowerCase();
+  if (local.length < 3) return local;
+
+  const chars = local.split("");
+  const positions = [];
+  const maxDots = Math.min(4, Math.max(1, local.length - 2));
+  const dotCount = 1 + Math.floor(Math.random() * maxDots);
+
+  while (positions.length < dotCount) {
+    const pos = 1 + Math.floor(Math.random() * (chars.length - 1));
+    if (!positions.includes(pos)) positions.push(pos);
+  }
+
+  positions.sort((a, b) => b - a);
+  for (const pos of positions) chars.splice(pos, 0, ".");
+  return chars.join("");
+}
+
+function makeRandomMail(baseEmail) {
+  const email = String(baseEmail || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) return "";
+
+  const parts = email.split("@");
+  const domain = parts.pop();
+  const local = parts.join("@").replace(/\./g, "");
+
+  if (!local || !domain) return "";
+
+  const plus = randomAlphaNum(6 + Math.floor(Math.random() * 5));
+  return `${randomDotLocal(local)}+${plus}@${domain}`;
 }
 
 function mask(k) {
@@ -155,6 +198,8 @@ app.get("/api/app/config", access, (req,res) => {
     ok:true,
     domain:req.domainKey,
     quickText:c.quick_text || "",
+      withdrawEmail:c.withdraw_email || "",
+    withdrawEmail:c.withdraw_email || "",
     selected:{ service:c.service, country:c.country, name:c.country_name, dial:c.dial, cost:c.cost }
   });
 });
@@ -167,6 +212,43 @@ app.get("/api/balance", async (req,res) => {
     res.json({ ok:true, balance: raw.startsWith("ACCESS_BALANCE:") ? raw.split(":")[1] : raw, raw, domain });
   } catch(e) {
     res.json({ ok:false, error:e.message, domain:domainFromReq(req) });
+  }
+});
+
+
+app.get("/api/random-withdraw-mail", access, async (req,res) => {
+  try {
+    const baseEmail = String(req.config.withdraw_email || "").trim().toLowerCase();
+    if (!baseEmail || !baseEmail.includes("@")) {
+      return res.json({ ok:false, error:"ADMIN_CHUA_NHAP_MAIL_GOC" });
+    }
+
+    let generated = "";
+    for (let i = 0; i < 50; i++) {
+      const candidate = makeRandomMail(baseEmail);
+      if (!candidate) continue;
+
+      try {
+        await sb("withdraw_mails", {
+          method:"POST",
+          body:JSON.stringify({
+            domain:listDomain(req),
+            base_email:baseEmail,
+            generated_email:candidate
+          }),
+          prefer:"return=minimal"
+        });
+        generated = candidate;
+        break;
+      } catch(e) {
+        // Unique conflict means this generated mail already exists. Try again.
+      }
+    }
+
+    if (!generated) return res.status(500).json({ ok:false, error:"KHONG_TAO_DUOC_MAIL_MOI" });
+    res.json({ ok:true, email:generated });
+  } catch(e) {
+    res.status(500).json({ ok:false, error:e.message });
   }
 });
 
@@ -226,6 +308,7 @@ app.post("/api/admin/save", admin, async (req,res) => {
     if (apiKey) c.grizzly_api_key = apiKey;
 
     c.quick_text = String(req.body.quickText ?? c.quick_text ?? "").trim();
+    c.withdraw_email = String(req.body.withdrawEmail ?? c.withdraw_email ?? "").trim();
 
     if (req.body.country) {
       c.service = "lf";
@@ -246,7 +329,8 @@ app.post("/api/admin/save", admin, async (req,res) => {
         name:c.country_name,
         dial:c.dial,
         cost:c.cost,
-        quickText:c.quick_text || ""
+        quickText:c.quick_text || "",
+        withdrawEmail:c.withdraw_email || ""
       }
     });
   } catch(e) {
