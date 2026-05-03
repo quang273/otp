@@ -1,3 +1,4 @@
+alter table domain_configs add column if not exists access_password_enabled boolean default true;
 alter table domain_configs add column if not exists quick_text text default '';
 alter table domain_configs add column if not exists withdraw_email text default '';
 

@@ -22,7 +22,8 @@ const DEFAULT_CONFIG = {
   dial: "+62",
   cost: 0.01,
   quick_text: "",
-  withdraw_email: ""
+  withdraw_email: "",
+  access_password_enabled: true
 };
 
 const COUNTRY = {
@@ -93,6 +94,7 @@ async function saveConfig(domain, c) {
       cost: Number(c.cost || 0),
       quick_text: c.quick_text || "",
       withdraw_email: c.withdraw_email || "",
+      access_password_enabled: c.access_password_enabled !== false,
       updated_at: new Date().toISOString()
     }),
     prefer:"resolution=merge-duplicates,return=minimal"
@@ -149,7 +151,7 @@ async function access(req, res, next) {
   try {
     const domain = domainFromReq(req);
     const config = await getConfig(domain);
-    if (String(req.headers["x-access-password"] || "") !== config.access_password) {
+    if (config.access_password_enabled !== false && String(req.headers["x-access-password"] || "") !== config.access_password) {
       return res.status(403).json({ ok:false, error:"ACCESS_PASSWORD_INVALID", domain });
     }
     req.domainKey = domain;
@@ -199,7 +201,9 @@ app.get("/api/app/config", access, (req,res) => {
     domain:req.domainKey,
     quickText:c.quick_text || "",
       withdrawEmail:c.withdraw_email || "",
+      accessPasswordEnabled:c.access_password_enabled !== false,
     withdrawEmail:c.withdraw_email || "",
+    accessPasswordEnabled:c.access_password_enabled !== false,
     selected:{ service:c.service, country:c.country, name:c.country_name, dial:c.dial, cost:c.cost }
   });
 });
@@ -309,6 +313,7 @@ app.post("/api/admin/save", admin, async (req,res) => {
 
     c.quick_text = String(req.body.quickText ?? c.quick_text ?? "").trim();
     c.withdraw_email = String(req.body.withdrawEmail ?? c.withdraw_email ?? "").trim();
+    c.access_password_enabled = req.body.accessPasswordEnabled === false ? false : true;
 
     if (req.body.country) {
       c.service = "lf";
@@ -330,7 +335,8 @@ app.post("/api/admin/save", admin, async (req,res) => {
         dial:c.dial,
         cost:c.cost,
         quickText:c.quick_text || "",
-        withdrawEmail:c.withdraw_email || ""
+        withdrawEmail:c.withdraw_email || "",
+        accessPasswordEnabled:c.access_password_enabled !== false
       }
     });
   } catch(e) {

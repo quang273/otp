@@ -191,6 +191,10 @@ button{width:100%;border:0;border-radius:16px;padding:13px;margin-top:10px;backg
       <label>Mật khẩu truy cập mới</label>
       <input id="newAccess" type="password" placeholder="Để trống nếu không đổi">
 
+      <label>Yêu cầu mật khẩu truy cập</label>
+      <button id="accessToggleBtn" class="dark" type="button" onclick="toggleAccessPassword()">Đang bật mật khẩu truy cập</button>
+      <div class="small">Bật: người dùng phải nhập mật khẩu. Tắt: vào web là mở tool luôn.</div>
+
       <button onclick="saveSettings()">Lưu cài đặt</button>
       <div class="row">
         <button class="dark" onclick="back()">Quay lại</button>
@@ -217,6 +221,7 @@ let timer = null;
 let current2FA = "";
 let quickText = "";
 let withdrawEmail = "";
+let accessPasswordEnabled = true;
 let currentWithdrawMail = "";
 
 function el(id) { return document.getElementById(id); }
@@ -271,6 +276,18 @@ function updateQuickText() {
   el("quickTextView").textContent = quickText || "Chưa có nội dung";
 }
 
+function updateAccessToggleUI() {
+  const btn = el("accessToggleBtn");
+  if (!btn) return;
+  btn.textContent = accessPasswordEnabled ? "Đang bật mật khẩu truy cập" : "Đang tắt mật khẩu truy cập";
+  btn.className = accessPasswordEnabled ? "dark" : "green";
+}
+
+function toggleAccessPassword() {
+  accessPasswordEnabled = !accessPasswordEnabled;
+  updateAccessToggleUI();
+}
+
 async function updateWithdrawMail() {
   try {
     const res = await accessApi("/api/random-withdraw-mail");
@@ -313,6 +330,7 @@ async function loadConfig() {
     dial = selected.dial;
     quickText = data.quickText || "";
     withdrawEmail = data.withdrawEmail || "";
+    accessPasswordEnabled = data.accessPasswordEnabled !== false;
     updateSelectedUI();
     updateQuickText();
     updateWithdrawMail();
@@ -389,6 +407,8 @@ async function loginAdmin() {
     el("keyMask").textContent = "API key: " + data.settings.keyMasked;
     el("quickTextAdmin").value = data.settings.quickText || "";
     el("withdrawEmailAdmin").value = data.settings.withdrawEmail || "";
+    accessPasswordEnabled = data.settings.accessPasswordEnabled !== false;
+    updateAccessToggleUI();
     pick = {
       country:data.settings.country,
       name:data.settings.name,
@@ -448,7 +468,8 @@ async function saveSettings() {
     adminPassword: el("newAdmin").value.trim(),
     accessPassword: el("newAccess").value.trim(),
     quickText: el("quickTextAdmin").value.trim(),
-    withdrawEmail: el("withdrawEmailAdmin").value.trim()
+    withdrawEmail: el("withdrawEmailAdmin").value.trim(),
+    accessPasswordEnabled: accessPasswordEnabled
   };
 
   if (pick) {
@@ -472,7 +493,9 @@ async function saveSettings() {
 
     quickText = data.settings.quickText || "";
     withdrawEmail = data.settings.withdrawEmail || "";
+    accessPasswordEnabled = data.settings.accessPasswordEnabled !== false;
     updateQuickText();
+    updateAccessToggleUI();
     updateWithdrawMail();
     el("keyMask").textContent = "API key: " + data.settings.keyMasked;
     showMsg("adminMsg", "Đã lưu cài đặt cho " + DOMAIN, "ok");
@@ -764,6 +787,7 @@ window.loadPrices = loadPrices;
 window.renderPrices = renderPrices;
 window.chooseCountry = chooseCountry;
 window.saveSettings = saveSettings;
+window.toggleAccessPassword = toggleAccessPassword;
 window.deposit = deposit;
 window.rent = rent;
 window.cancelNum = cancelNum;
@@ -782,8 +806,19 @@ window.update2FA = update2FA;
 
 setInterval(update2FA, 1000);
 
-if (access) openApp();
-else show("login");
+async function boot() {
+  if (access) return openApp();
+
+  try {
+    access = "";
+    const res = await accessApi("/api/auth/check-access", { method:"POST" });
+    const data = await res.json();
+    if (data.ok) return openApp();
+  } catch (e) {}
+
+  show("login");
+}
+boot();
 </script>
 </body>
 </html>
